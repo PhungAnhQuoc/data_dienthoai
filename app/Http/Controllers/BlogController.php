@@ -3,15 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\BlogPost;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class BlogController extends Controller
 {
+    private function getActivePostsQuery()
+    {
+        return BlogPost::where('is_active', true)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
+    }
+
     public function index()
     {
-        $posts = BlogPost::where('is_active', true)
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
+        $posts = $this->getActivePostsQuery()
             ->orderBy('published_at', 'desc')
             ->paginate(12);
 
@@ -20,20 +26,21 @@ class BlogController extends Controller
 
     public function show($slug)
     {
-        $post = BlogPost::where('slug', $slug)
-            ->where('is_active', true)
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
+        $post = $this->getActivePostsQuery()
+            ->where('slug', $slug)
             ->firstOrFail();
 
-        $relatedPosts = BlogPost::where('is_active', true)
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
+        $relatedPosts = $this->getActivePostsQuery()
             ->where('id', '!=', $post->id)
             ->orderBy('published_at', 'desc')
             ->limit(3)
             ->get();
 
-        return view('blog.show', compact('post', 'relatedPosts'));
+        $suggestedProducts = Product::where('is_active', true)
+            ->orderBy('created_at', 'desc')
+            ->limit(6)
+            ->get();
+
+        return view('blog.show', compact('post', 'relatedPosts', 'suggestedProducts'));
     }
 }

@@ -26,12 +26,12 @@ class BlogPostController extends Controller
             'slug' => 'required|string|unique:blog_posts',
             'content' => 'required|string',
             'excerpt' => 'nullable|string|max:500',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'is_published' => 'boolean',
         ]);
 
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('blog', 'public');
+        if ($request->hasFile('featured_image')) {
+            $validated['featured_image'] = $request->file('featured_image')->store('blog', 'public');
         }
 
         BlogPost::create($validated);
@@ -55,12 +55,12 @@ class BlogPostController extends Controller
             'slug' => 'required|string|unique:blog_posts,slug,' . $blog->id,
             'content' => 'required|string',
             'excerpt' => 'nullable|string|max:500',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'is_published' => 'boolean',
         ]);
 
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('blog', 'public');
+        if ($request->hasFile('featured_image')) {
+            $validated['featured_image'] = $request->file('featured_image')->store('blog', 'public');
         }
 
         $blog->update($validated);

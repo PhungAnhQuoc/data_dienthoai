@@ -116,6 +116,8 @@
                     </div>
                 </div>
 
+                <input type="hidden" id="hidden-coupon" name="promotion_code" value="">
+
                 <button type="submit" class="btn btn-primary btn-lg w-100 mb-4">
                     <i class="bi bi-check-circle me-2"></i>Đặt hàng
                 </button>
@@ -145,6 +147,15 @@
                         <div class="text-muted">Tạm tính</div>
                         <div class="fw-bold" id="summary-subtotal">{{ number_format($subtotal, 0, ',', '.') }}₫</div>
                     </div>
+                    
+                    <!-- Coupon Discount -->
+                    <div id="discount-section" style="display:none;">
+                        <div class="d-flex justify-content-between mb-2 text-success">
+                            <div class="text-muted">Giảm giá</div>
+                            <div class="fw-bold" id="summary-discount">0₫</div>
+                        </div>
+                    </div>
+                    
                     <div class="d-flex justify-content-between mb-2">
                         <div class="text-muted">Phí vận chuyển</div>
                         <div class="fw-bold" id="summary-shipping">{{ number_format($shipping ?? 30000, 0, ',', '.') }}₫</div>
@@ -153,6 +164,24 @@
                         <div class="text-muted">Thuế (10%)</div>
                         <div class="fw-bold" id="summary-tax">{{ number_format($tax ?? 0, 0, ',', '.') }}₫</div>
                     </div>
+                    <hr>
+                    
+                    <!-- Coupon Code Input -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Mã giảm giá</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" 
+                                   id="checkout-coupon"
+                                   class="form-control" 
+                                   placeholder="Nhập mã..."
+                                   autocomplete="off">
+                            <button class="btn btn-outline-primary" type="button" onclick="applyCouponCheckout()">
+                                Áp dụng
+                            </button>
+                        </div>
+                        <small id="coupon-msg-checkout" class="d-block mt-1"></small>
+                    </div>
+                    
                     <hr>
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="fw-bold">Tổng cộng</div>
@@ -200,7 +229,15 @@ document.addEventListener('DOMContentLoaded', function () {
         var subtotal = Number({{ $subtotal ?? 0 }});
         var shippingFee = document.querySelector('input[name="shipping_method"]:checked')?.value === 'fast' ? 50000 : 30000;
         var tax = Math.round(subtotal * 0.10);
-        var total = subtotal + shippingFee + tax;
+        
+        // Get current discount if applied
+        var discount = 0;
+        if (document.getElementById('hidden-coupon').value) {
+            var discountText = document.getElementById('summary-discount').textContent;
+            discount = parseInt(discountText.replace('₫', '').replace(/\./g, '')) || 0;
+        }
+        
+        var total = subtotal + shippingFee + tax - discount;
 
         document.getElementById('summary-subtotal').textContent = formatVND(subtotal);
         document.getElementById('summary-shipping').textContent = formatVND(shippingFee);
@@ -211,7 +248,62 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('input[name="shipping_method"]').forEach(r => r.addEventListener('change', recalcTotals));
     recalcTotals();
 });
+
+function applyCouponCheckout() {
+    const code = document.getElementById('checkout-coupon').value.trim().toUpperCase();
+    if (!code) {
+        alert('Vui lòng nhập mã giảm giá');
+        return;
+    }
+
+    // Call API to validate coupon
+    fetch('{{ route("checkout.validate-coupon") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ code: code })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const msg = document.getElementById('coupon-msg-checkout');
+        if (data.success) {
+            // Save to hidden field
+            document.getElementById('hidden-coupon').value = data.code;
+            
+            // Update discount display
+            const discountSection = document.getElementById('discount-section');
+            discountSection.style.display = 'block';
+            document.getElementById('summary-discount').textContent = data.discount_text + '₫';
+            
+            // Recalculate total with current shipping method
+            const subtotal = Number({{ $subtotal ?? 0 }});
+            const shippingFee = document.querySelector('input[name="shipping_method"]:checked')?.value === 'fast' ? 50000 : 30000;
+            const tax = Math.round(subtotal * 0.10);
+            const discount = data.discount;
+            const newTotal = subtotal + shippingFee + tax - discount;
+            
+            document.getElementById('summary-total').textContent = newTotal.toLocaleString('vi-VN') + '₫';
+            
+            msg.textContent = '✓ ' + data.message;
+            msg.className = 'text-success fw-bold';
+            
+            document.getElementById('checkout-coupon').disabled = true;
+        } else {
+            msg.textContent = '✗ ' + data.message;
+            msg.className = 'text-danger fw-bold';
+            document.getElementById('hidden-coupon').value = '';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('coupon-msg-checkout').textContent = '✗ Có lỗi xảy ra';
+        document.getElementById('coupon-msg-checkout').className = 'text-danger fw-bold';
+    });
+}
 </script>
 @endpush
 
 @endsection
+

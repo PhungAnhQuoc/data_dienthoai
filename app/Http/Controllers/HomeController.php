@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Banner;
 use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Promotion;
 use App\Models\BlogPost;
 use Illuminate\Http\Request;
@@ -61,6 +62,10 @@ class HomeController extends Controller
             ->take(6)
             ->get();
 
+        // Lấy danh mục
+        $categories = Category::where('is_active', true)
+            ->get();
+
         // Lấy tin tức nổi bật
         $blogPosts = BlogPost::where('is_active', true)
             ->whereNotNull('published_at')
@@ -77,6 +82,7 @@ class HomeController extends Controller
             'bestsellerProducts',
             'accessories',
             'brands',
+            'categories',
             'blogPosts'
         ));
     }

@@ -173,14 +173,19 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <h6 class="fw-bold mb-3">Mã giảm giá</h6>
-                    <div class="input-group">
-                        <input type="text" 
-                               class="form-control" 
-                               placeholder="Nhập mã giảm giá">
-                        <button class="btn btn-outline-primary" type="button">
-                            Áp dụng
-                        </button>
-                    </div>
+                    <form id="coupon-form" class="mb-3">
+                        <div class="input-group">
+                            <input type="text" 
+                                   id="coupon-input"
+                                   class="form-control" 
+                                   placeholder="Nhập mã giảm giá"
+                                   autocomplete="off">
+                            <button class="btn btn-outline-primary" type="button" onclick="applyCoupon()">
+                                Áp dụng
+                            </button>
+                        </div>
+                        <small class="text-muted d-block mt-2" id="coupon-message"></small>
+                    </form>
                 </div>
             </div>
         </div>
@@ -232,6 +237,27 @@ function updateQuantity(productId, quantity) {
         console.error('Error:', error);
         alert('Có lỗi xảy ra, vui lòng thử lại!');
     });
+}
+
+function applyCoupon() {
+    const code = document.getElementById('coupon-input').value.trim();
+    if (!code) {
+        alert('Vui lòng nhập mã giảm giá');
+        return;
+    }
+
+    // Store coupon in session storage for now (you can send to server later)
+    sessionStorage.setItem('coupon_code', code);
+    
+    // Show message
+    const msg = document.getElementById('coupon-message');
+    msg.textContent = '✓ Mã giảm giá sẽ được áp dụng tại thanh toán';
+    msg.className = 'text-muted d-block mt-2 text-success';
+    
+    // Reset after 3 seconds
+    setTimeout(() => {
+        msg.textContent = '';
+    }, 3000);
 }
 </script>
 @endpush

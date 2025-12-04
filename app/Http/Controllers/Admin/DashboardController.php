@@ -20,6 +20,10 @@ class DashboardController extends Controller
             'out_of_stock' => Product::where('stock', 0)->count(),
             'total_categories' => Category::count(),
             'total_brands' => Brand::count(),
+            'total_revenue' => Order::where('status', '!=', 'cancelled')->sum('total_amount'),
+            'total_orders' => Order::where('status', '!=', 'cancelled')->count(),
+            'pending_orders' => Order::where('status', 'pending')->count(),
+            'sold_count' => Order::where('status', 'completed')->count(),
         ];
 
         $recentProducts = Product::with(['category', 'brand'])
@@ -33,20 +37,31 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        // Get recent orders
+        $recentOrders = Order::with(['user'])
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+
         // Get monthly revenue for the last 12 months
-        $monthlyRevenue = Order::selectRaw('MONTH(created_at) as month, YEAR(created_at) as year, SUM(total_amount) as revenue')
-            ->where('status', '!=', 'cancelled')
-            ->groupBy('year', 'month')
-            ->orderBy('year', 'asc')
-            ->orderBy('month', 'asc')
-            ->get()
-            ->map(function($item) {
-                return [
-                    'month' => $item->month,
-                    'year' => $item->year,
-                    'revenue' => $item->revenue ?? 0
-                ];
-            });
+        $monthlyRevenue = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $month = $date->month;
+            $year = $date->year;
+            
+            $revenue = Order::where('status', '!=', 'cancelled')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->sum('total_amount');
+            
+            $monthlyRevenue[] = [
+                'month' => $month,
+                'year' => $year,
+                'month_name' => $date->format('M/Y'),
+                'revenue' => $revenue ?? 0
+            ];
+        }
 
         // Get category breakdown
         $categoryBreakdown = Product::selectRaw('categories.name, COUNT(products.id) as count')
@@ -54,6 +69,6 @@ class DashboardController extends Controller
             ->groupBy('categories.name')
             ->get();
 
-        return view('admin.dashboard', compact('stats', 'recentProducts', 'lowStockProducts', 'monthlyRevenue', 'categoryBreakdown'));
+        return view('admin.dashboard', compact('stats', 'recentProducts', 'lowStockProducts', 'monthlyRevenue', 'categoryBreakdown', 'recentOrders'));
     }
 }

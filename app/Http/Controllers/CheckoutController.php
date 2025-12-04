@@ -7,6 +7,7 @@ use App\Models\OrderItem;
 use App\Models\PaymentMethod;
 use App\Models\BankAccount;
 use App\Models\Product;
+use App\Models\Promotion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -113,7 +114,30 @@ class CheckoutController extends Controller
 
             $shipping = 30000;
             $tax = round($subtotal * 0.1);
-            $total = $subtotal + $shipping + $tax;
+            $discount = 0;
+            $promotionCode = null;
+
+            // Validate promotion code if provided
+            if ($request->has('promotion_code') && !empty($request->get('promotion_code'))) {
+                $promoCode = trim(strtoupper($request->get('promotion_code')));
+                $promotion = Promotion::where('code', $promoCode)
+                    ->where('is_active', true)
+                    ->where('start_date', '<=', now())
+                    ->where('end_date', '>=', now())
+                    ->first();
+
+                if ($promotion) {
+                    // Calculate discount
+                    if ($promotion->discount_type === 'percentage') {
+                        $discount = round($subtotal * ($promotion->discount_value / 100));
+                    } else {
+                        $discount = (int)$promotion->discount_value;
+                    }
+                    $promotionCode = $promoCode;
+                }
+            }
+
+            $total = $subtotal + $shipping + $tax - $discount;
 
             $order = Order::create([
                 'user_id' => $user->id,
@@ -121,9 +145,11 @@ class CheckoutController extends Controller
                 'total_amount' => $total,
                 'shipping_cost' => $shipping,
                 'tax_amount' => $tax,
+                'promotion_code' => $promotionCode,
+                'discount_amount' => $discount,
                 'status' => 'pending',
                 'payment_status' => 'unpaid',
-                'payment_method_id' => $validated['payment_method_id'],
+                'payment_method' => $validated['payment_method_id'],
                 'shipping_address' => $validated['shipping_address'],
                 'shipping_phone' => $validated['shipping_phone'],
                 'shipping_name' => $validated['shipping_name'],
@@ -177,4 +203,92 @@ class CheckoutController extends Controller
 
         return view('checkout.success', compact('order', 'paymentMethod', 'bankAccounts'));
     }
+
+    public function validateCoupon(Request $request)
+    {
+        try {
+            $code = trim(strtoupper($request->get('code', '')));
+            
+            if (empty($code)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vui lòng nhập mã giảm giá'
+                ]);
+            }
+
+            $promotion = Promotion::where('code', $code)
+                ->where('is_active', true)
+                ->where('start_date', '<=', now())
+                ->where('end_date', '>=', now())
+                ->first();
+
+            if (!$promotion) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mã giảm giá không hợp lệ hoặc hết hạn'
+                ]);
+            }
+
+            // Get current cart subtotal
+            $cart = session()->get('cart', []);
+            if (empty($cart)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Giỏ hàng trống'
+                ]);
+            }
+
+            $subtotal = 0;
+            foreach ($cart as $productId => $item) {
+                $quantity = isset($item['quantity']) ? (int) $item['quantity'] : 1;
+                $product = Product::find($productId);
+                
+                if (isset($item['price']) && $item['price'] > 0) {
+                    $price = (float) $item['price'];
+                } else if ($product) {
+                    $price = $product->sale_price > 0 ? (float) $product->sale_price : (float) $product->price;
+                } else {
+                    $price = 0;
+                }
+                $subtotal += $price * $quantity;
+            }
+
+            // Calculate discount
+            $discount = 0;
+            if ($promotion->discount_type === 'percentage') {
+                $discount = round($subtotal * ($promotion->discount_value / 100));
+            } else {
+                $discount = (int)$promotion->discount_value;
+            }
+
+            // Add conditions message if needed
+            $conditions = [];
+            if ($subtotal < 500000) {
+                $conditions[] = 'Đơn hàng tối thiểu 500.000₫';
+            }
+
+            if (!empty($conditions)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Điều kiện áp dụng: ' . implode(', ', $conditions)
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Áp dụng thành công',
+                'code' => $code,
+                'discount' => $discount,
+                'discount_text' => number_format($discount, 0, ',', '.'),
+                'discount_type' => $promotion->discount_type,
+                'discount_value' => $promotion->discount_value
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
+            ]);
+        }
+    }
 }
+

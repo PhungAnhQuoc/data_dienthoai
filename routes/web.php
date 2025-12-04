@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\BlogPostController;
 use App\Http\Controllers\Admin\AccessoryController;
 use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\PromotionController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\BlogPostController as AdminBlogController;
 use App\Http\Controllers\ReviewController;
@@ -39,6 +40,7 @@ Route::middleware('check.maintenance')->group(function () {
         Route::get('/thanh-toan', [App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout.index');
         Route::post('/thanh-toan/dat-hang', [App\Http\Controllers\CheckoutController::class, 'store'])->name('checkout.store');
         Route::get('/thanh-toan/thanh-cong/{orderId}', [App\Http\Controllers\CheckoutController::class, 'success'])->name('checkout.success');
+        Route::post('/kiem-tra-ma-giam-gia', [App\Http\Controllers\CheckoutController::class, 'validateCoupon'])->name('checkout.validate-coupon');
         
         // Wishlist Routes
         Route::get('/yeu-thich', [App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist.index');
@@ -109,9 +111,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('banners', BannerController::class);
     
     // Promotions
-    Route::get('promotions', function() {
-        return view('admin.promotions.index');
-    })->name('promotions.index');
+    Route::resource('promotions', PromotionController::class);
     
     // Blog
     Route::resource('blog', AdminBlogController::class);

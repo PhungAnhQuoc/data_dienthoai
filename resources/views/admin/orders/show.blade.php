@@ -22,35 +22,40 @@
                 <h5 class="mb-0">Order Items</h5>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>SKU</th>
-                                <th>Quantity</th>
-                                <th>Unit Price</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($order->items as $item)
-                            @php
-                                $price = $item->unit_price > 0 ? $item->unit_price : ($item->product->sale_price > 0 ? $item->product->sale_price : $item->product->price);
-                                $totalPrice = $item->total_price > 0 ? $item->total_price : ($price * $item->quantity);
-                            @endphp
-                            <tr>
-                                <td>
-                                    <strong>{{ $item->product->name }}</strong>
-                                </td>
-                                <td>{{ $item->product->sku }}</td>
-                                <td>{{ $item->quantity }}</td>
-                                <td>{{ number_format($price, 0, ',', '.') }}đ</td>
-                                <td><strong>{{ number_format($totalPrice, 0, ',', '.') }}đ</strong></td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    @foreach($order->items as $item)
+                    @php
+                        $price = $item->unit_price > 0 ? $item->unit_price : ($item->product->sale_price > 0 ? $item->product->sale_price : $item->product->price);
+                        $totalPrice = $item->total_price > 0 ? $item->total_price : ($price * $item->quantity);
+                    @endphp
+                    <div style="display: flex; gap: 15px; padding-bottom: 15px; border-bottom: 1px solid #e9ecef;">
+                        <!-- Product Image -->
+                        <div style="flex-shrink: 0;">
+                            @if($item->product->main_image)
+                                <img src="{{ asset('storage/' . $item->product->main_image) }}" alt="{{ $item->product->name }}" 
+                                     style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px;">
+                            @else
+                                <div style="width: 100px; height: 100px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-image" style="color: #999; font-size: 2rem;"></i>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- Product Details -->
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                                <div>
+                                    <h6 class="mb-1" style="font-weight: 600; color: #2c3e50;">{{ $item->product->name }}</h6>
+                                    <p class="mb-0" style="color: #999; font-size: 13px;">SKU: {{ $item->product->sku }}</p>
+                                </div>
+                                <div style="text-align: right;">
+                                    <p class="mb-1" style="font-weight: 600; color: #2c3e50;">{{ number_format($totalPrice, 0, ',', '.') }}₫</p>
+                                    <p class="mb-0" style="color: #999; font-size: 13px;">{{ $item->quantity }} × {{ number_format($price, 0, ',', '.') }}₫</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
                 </div>
 
                 <div class="row mt-4">

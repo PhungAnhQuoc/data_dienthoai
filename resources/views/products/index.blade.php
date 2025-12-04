@@ -267,7 +267,7 @@
 
             <!-- Pagination -->
             <div class="mt-5">
-                {{ $products->links() }}
+                {{ $products->links('pagination::custom') }}
             </div>
             @else
             <div class="text-center py-5">

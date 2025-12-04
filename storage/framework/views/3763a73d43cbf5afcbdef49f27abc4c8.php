@@ -271,7 +271,7 @@
 
             <!-- Pagination -->
             <div class="d-flex justify-content-center">
-                <?php echo e($products->links()); ?>
+                <?php echo e($products->links('pagination::custom')); ?>
 
             </div>
             <?php else: ?>

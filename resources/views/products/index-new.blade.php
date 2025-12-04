@@ -267,7 +267,7 @@
 
             <!-- Pagination -->
             <div class="d-flex justify-content-center">
-                {{ $products->links() }}
+                {{ $products->links('pagination::custom') }}
             </div>
             @else
             <div class="alert alert-info text-center py-5">

@@ -40,14 +40,14 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="image" class="form-label">Hình Ảnh</label>
-                        @if ($blog->image)
+                        <label for="featured_image" class="form-label">Hình Ảnh</label>
+                        @if ($blog->featured_image)
                             <div class="mb-2">
-                                <img src="{{ asset('storage/' . $blog->image) }}" alt="{{ $blog->title }}" style="max-width: 200px;">
+                                <img src="{{ asset('storage/' . $blog->featured_image) }}" alt="{{ $blog->title }}" style="max-width: 200px;">
                             </div>
                         @endif
-                        <input type="file" class="form-control @error('image') is-invalid @enderror" id="image" name="image" accept="image/*">
-                        @error('image')<span class="invalid-feedback">{{ $message }}</span>@enderror
+                        <input type="file" class="form-control @error('featured_image') is-invalid @enderror" id="featured_image" name="featured_image" accept="image/*">
+                        @error('featured_image')<span class="invalid-feedback">{{ $message }}</span>@enderror
                     </div>
 
                     <div class="mb-3">

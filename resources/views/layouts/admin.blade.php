@@ -29,13 +29,13 @@
 
         .sidebar {
             width: 240px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
             color: white;
             padding: 20px;
             position: fixed;
             height: 100vh;
             overflow-y: auto;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             z-index: 1000;
         }
 
@@ -93,7 +93,7 @@
         }
 
         .btn-add {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
             color: white;
             border: none;
             padding: 10px 24px;
@@ -107,7 +107,7 @@
 
         .btn-add:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 16px rgba(30, 58, 138, 0.4);
         }
 
         .card {
@@ -296,6 +296,12 @@
                     <a href="{{ route('admin.banners.index') }}" class="@if(request()->is('admin/banners*')) active @endif">
                         <i class="bi bi-images"></i>
                         <span>Quản lý Banner</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.promotions.index') }}" class="@if(request()->is('admin/promotions*')) active @endif">
+                        <i class="bi bi-tag"></i>
+                        <span>Mã ưu đãi</span>
                     </a>
                 </li>
                 <li>

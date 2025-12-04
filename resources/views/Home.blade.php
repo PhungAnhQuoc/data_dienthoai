@@ -79,9 +79,22 @@
                         <h5 class="card-title">{{ $promotion->title }}</h5>
                         <p class="text-muted small">{{ $promotion->description }}</p>
                         <div class="fw-bold text-primary">
-                            Số lượng còn: <span class="text-dark">{{ $promotion->code }}</span>
+                            @if($promotion->discount_value > 0)
+                                @if($promotion->discount_value >= 100)
+                                    Giảm: <span class="text-dark">{{ intval($promotion->discount_value) }}%</span>
+                                @else
+                                    Giảm: <span class="text-dark">{{ number_format($promotion->discount_value) }}đ</span>
+                                @endif
+                            @else
+                                {{ $promotion->title }}
+                            @endif
                         </div>
-                        <a href="#" class="btn btn-outline-primary btn-sm mt-2">Sao chép</a>
+                        <p class="text-muted small mt-2">
+                            Từ {{ $promotion->start_date->format('d/m/Y') }} đến {{ $promotion->end_date->format('d/m/Y') }}
+                        </p>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="copyCode(this, '{{ $promotion->code }}')">
+                            <i class="bi bi-clipboard"></i> Sao chép mã
+                        </button>
                     </div>
                 </div>
             </div>
@@ -430,43 +443,62 @@
 <!-- Category Tiles + Footer Preview (from design) -->
 <section class="categories-preview mb-5">
     <div class="container">
-        <h3 class="text-center fw-bold mb-4">Mua sắm theo danh mục</h3>
+        <h3 class="text-center fw-bold mb-4">Mua sắp theo danh mục</h3>
         <div class="row g-4">
-            <div class="col-md-3">
-                <a href="{{ route('products.index', ['category' => 'iphone']) }}" class="card text-decoration-none overflow-hidden rounded-3 shadow-sm">
-                    <img src="{{ asset('storage/placeholder/category-iphone.jpg') }}" class="card-img-top" alt="iPhone" style="height:140px; object-fit:cover;">
-                    <div class="card-body text-center py-3">
-                        <strong class="text-dark">iPhone</strong>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a href="{{ route('products.index', ['category' => 'samsung']) }}" class="card text-decoration-none overflow-hidden rounded-3 shadow-sm">
-                    <img src="{{ asset('storage/placeholder/category-samsung.jpg') }}" class="card-img-top" alt="Samsung" style="height:140px; object-fit:cover;">
-                    <div class="card-body text-center py-3">
-                        <strong class="text-dark">Samsung</strong>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a href="{{ route('products.index', ['category' => 'google-pixel']) }}" class="card text-decoration-none overflow-hidden rounded-3 shadow-sm">
-                    <img src="{{ asset('storage/placeholder/category-pixel.jpg') }}" class="card-img-top" alt="Google Pixel" style="height:140px; object-fit:cover;">
-                    <div class="card-body text-center py-3">
-                        <strong class="text-dark">Google Pixel</strong>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a href="{{ route('products.index', ['category' => 'gaming-phones']) }}" class="card text-decoration-none overflow-hidden rounded-3 shadow-sm">
-                    <img src="{{ asset('storage/placeholder/category-gaming.jpg') }}" class="card-img-top" alt="Điện thoại Gaming" style="height:140px; object-fit:cover;">
-                    <div class="card-body text-center py-3">
-                        <strong class="text-dark">Điện thoại Gaming</strong>
-                    </div>
-                </a>
-            </div>
+            @if(count($categories) > 0)
+                @foreach($categories as $category)
+                <div class="col-md-3">
+                    <a href="{{ route('products.index', ['category' => $category->slug]) }}" class="card text-decoration-none overflow-hidden rounded-3 shadow-sm">
+                        @if($category->image)
+                        <img src="{{ asset('storage/' . $category->image) }}" class="card-img-top" alt="{{ $category->name }}" style="height:140px; object-fit:cover;">
+                        @else
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height:140px;">
+                            <span class="text-muted">{{ $category->name }}</span>
+                        </div>
+                        @endif
+                        <div class="card-body text-center py-3">
+                            <strong class="text-dark">{{ $category->name }}</strong>
+                        </div>
+                    </a>
+                </div>
+                @endforeach
+            @endif
         </div>
     </div>
 </section>
 
-@include('partials.footer')
 @endsection
+
+@push('scripts')
+<script>
+function copyCode(btn, code) {
+    // Copy to clipboard
+    navigator.clipboard.writeText(code).then(() => {
+        // Show notification
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i> Đã sao chép!';
+        btn.disabled = true;
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 2000);
+    }).catch(() => {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = code;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        
+        btn.innerHTML = '<i class="bi bi-check"></i> Đã sao chép!';
+        btn.disabled = true;
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 2000);
+    });
+}
+</script>
+@endpush

@@ -39,9 +39,9 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="image" class="form-label">Hình Ảnh</label>
-                        <input type="file" class="form-control @error('image') is-invalid @enderror" id="image" name="image" accept="image/*">
-                        @error('image')<span class="invalid-feedback">{{ $message }}</span>@enderror
+                        <label for="featured_image" class="form-label">Hình Ảnh</label>
+                        <input type="file" class="form-control @error('featured_image') is-invalid @enderror" id="featured_image" name="featured_image" accept="image/*">
+                        @error('featured_image')<span class="invalid-feedback">{{ $message }}</span>@enderror
                     </div>
 
                     <div class="mb-3">

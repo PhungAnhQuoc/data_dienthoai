@@ -79,9 +79,24 @@
                         <h5 class="card-title"><?php echo e($promotion->title); ?></h5>
                         <p class="text-muted small"><?php echo e($promotion->description); ?></p>
                         <div class="fw-bold text-primary">
-                            Số lượng còn: <span class="text-dark"><?php echo e($promotion->code); ?></span>
+                            <?php if($promotion->discount_value > 0): ?>
+                                <?php if($promotion->discount_value >= 100): ?>
+                                    Giảm: <span class="text-dark"><?php echo e(intval($promotion->discount_value)); ?>%</span>
+                                <?php else: ?>
+                                    Giảm: <span class="text-dark"><?php echo e(number_format($promotion->discount_value)); ?>đ</span>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <?php echo e($promotion->title); ?>
+
+                            <?php endif; ?>
                         </div>
-                        <a href="#" class="btn btn-outline-primary btn-sm mt-2">Sao chép</a>
+                        <p class="text-muted small mt-2">
+                            Từ <?php echo e($promotion->start_date->format('d/m/Y')); ?> đến <?php echo e($promotion->end_date->format('d/m/Y')); ?>
+
+                        </p>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="copyCode(this, '<?php echo e($promotion->code); ?>')">
+                            <i class="bi bi-clipboard"></i> Sao chép mã
+                        </button>
                     </div>
                 </div>
             </div>
@@ -434,45 +449,64 @@
 <!-- Category Tiles + Footer Preview (from design) -->
 <section class="categories-preview mb-5">
     <div class="container">
-        <h3 class="text-center fw-bold mb-4">Mua sắm theo danh mục</h3>
+        <h3 class="text-center fw-bold mb-4">Mua sắp theo danh mục</h3>
         <div class="row g-4">
-            <div class="col-md-3">
-                <a href="<?php echo e(route('products.index', ['category' => 'iphone'])); ?>" class="card text-decoration-none overflow-hidden rounded-3 shadow-sm">
-                    <img src="<?php echo e(asset('storage/placeholder/category-iphone.jpg')); ?>" class="card-img-top" alt="iPhone" style="height:140px; object-fit:cover;">
-                    <div class="card-body text-center py-3">
-                        <strong class="text-dark">iPhone</strong>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a href="<?php echo e(route('products.index', ['category' => 'samsung'])); ?>" class="card text-decoration-none overflow-hidden rounded-3 shadow-sm">
-                    <img src="<?php echo e(asset('storage/placeholder/category-samsung.jpg')); ?>" class="card-img-top" alt="Samsung" style="height:140px; object-fit:cover;">
-                    <div class="card-body text-center py-3">
-                        <strong class="text-dark">Samsung</strong>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a href="<?php echo e(route('products.index', ['category' => 'google-pixel'])); ?>" class="card text-decoration-none overflow-hidden rounded-3 shadow-sm">
-                    <img src="<?php echo e(asset('storage/placeholder/category-pixel.jpg')); ?>" class="card-img-top" alt="Google Pixel" style="height:140px; object-fit:cover;">
-                    <div class="card-body text-center py-3">
-                        <strong class="text-dark">Google Pixel</strong>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a href="<?php echo e(route('products.index', ['category' => 'gaming-phones'])); ?>" class="card text-decoration-none overflow-hidden rounded-3 shadow-sm">
-                    <img src="<?php echo e(asset('storage/placeholder/category-gaming.jpg')); ?>" class="card-img-top" alt="Điện thoại Gaming" style="height:140px; object-fit:cover;">
-                    <div class="card-body text-center py-3">
-                        <strong class="text-dark">Điện thoại Gaming</strong>
-                    </div>
-                </a>
-            </div>
+            <?php if(count($categories) > 0): ?>
+                <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <div class="col-md-3">
+                    <a href="<?php echo e(route('products.index', ['category' => $category->slug])); ?>" class="card text-decoration-none overflow-hidden rounded-3 shadow-sm">
+                        <?php if($category->image): ?>
+                        <img src="<?php echo e(asset('storage/' . $category->image)); ?>" class="card-img-top" alt="<?php echo e($category->name); ?>" style="height:140px; object-fit:cover;">
+                        <?php else: ?>
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height:140px;">
+                            <span class="text-muted"><?php echo e($category->name); ?></span>
+                        </div>
+                        <?php endif; ?>
+                        <div class="card-body text-center py-3">
+                            <strong class="text-dark"><?php echo e($category->name); ?></strong>
+                        </div>
+                    </a>
+                </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            <?php endif; ?>
         </div>
     </div>
 </section>
 
-<?php echo $__env->make('partials.footer', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 <?php $__env->stopSection(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+function copyCode(btn, code) {
+    // Copy to clipboard
+    navigator.clipboard.writeText(code).then(() => {
+        // Show notification
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i> Đã sao chép!';
+        btn.disabled = true;
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 2000);
+    }).catch(() => {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = code;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        
+        btn.innerHTML = '<i class="bi bi-check"></i> Đã sao chép!';
+        btn.disabled = true;
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 2000);
+    });
+}
+</script>
+<?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\mobile-shop-master\resources\views/home.blade.php ENDPATH**/ ?>

@@ -55,11 +55,20 @@
 
                             <div class="row mt-3">
                                 <div class="col-6 text-muted">Tạm tính</div>
-                                <div class="col-6 text-end fw-bold">{{ number_format($order->total_amount - ($order->shipping_cost ?? 0) - ($order->tax_amount ?? 0), 0, ',', '.') }}₫</div>
+                                <div class="col-6 text-end fw-bold">{{ number_format($order->total_amount - ($order->shipping_cost ?? 0) - ($order->tax_amount ?? 0) + ($order->discount_amount ?? 0), 0, ',', '.') }}₫</div>
                                 <div class="col-6 text-muted">Phí vận chuyển</div>
                                 <div class="col-6 text-end fw-bold">{{ number_format($order->shipping_cost ?? 0, 0, ',', '.') }}₫</div>
-                                <div class="col-6 text-muted">Giảm giá</div>
-                                <div class="col-6 text-end fw-bold">0₫</div>
+                                <div class="col-6 text-muted">Thuế (10%)</div>
+                                <div class="col-6 text-end fw-bold">{{ number_format($order->tax_amount ?? 0, 0, ',', '.') }}₫</div>
+                                @if(($order->discount_amount ?? 0) > 0)
+                                    <div class="col-6 text-muted">Giảm giá ({{ $order->promotion_code ?? '' }})</div>
+                                    <div class="col-6 text-end fw-bold text-success">-{{ number_format($order->discount_amount ?? 0, 0, ',', '.') }}₫</div>
+                                @endif
+                            </div>
+                            <hr>
+                            <div class="row mt-2">
+                                <div class="col-6 fw-bold fs-5">Tổng cộng</div>
+                                <div class="col-6 text-end fw-bold fs-5 text-primary">{{ number_format($order->total_amount, 0, ',', '.') }}₫</div>
                             </div>
                         </div>
                     </div>
