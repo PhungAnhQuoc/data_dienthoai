@@ -18,6 +18,41 @@ class CheckoutController extends Controller
         $this->middleware('auth');
     }
 
+    private function processCartItems(array $cart): array
+    {
+        if (empty($cart)) {
+            return ['items' => [], 'subtotal' => 0, 'products' => []];
+        }
+
+        $products = Product::whereIn('id', array_keys($cart))->get()->keyBy('id');
+        $cartItems = [];
+        $subtotal = 0;
+
+        foreach ($cart as $productId => $item) {
+            $product = $products->get($productId);
+            $quantity = (int) ($item['quantity'] ?? 1);
+            
+            $price = $item['price'] ?? null;
+            if (!$price && $product) {
+                $price = $product->sale_price > 0 ? $product->sale_price : $product->price;
+            }
+            $price = (float) ($price ?? 0);
+
+            if ($product) {
+                $cartItems[] = [
+                    'product_id' => $productId,
+                    'product' => $product,
+                    'name' => $product->name,
+                    'price' => $price,
+                    'quantity' => $quantity,
+                ];
+                $subtotal += $price * $quantity;
+            }
+        }
+
+        return ['items' => $cartItems, 'subtotal' => $subtotal, 'products' => $products];
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -27,53 +62,33 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống');
         }
 
-        $cartItems = [];
-        $subtotal = 0;
-
-        foreach ($cart as $productId => $item) {
-            $quantity = isset($item['quantity']) ? (int) $item['quantity'] : 1;
-            $product = Product::find($productId);
-            
-            // Lấy giá từ cart nếu có, nếu không lấy từ product (ưu tiên sale_price)
-            if (isset($item['price']) && $item['price'] > 0) {
-                $price = (float) $item['price'];
-            } else if ($product) {
-                $price = $product->sale_price > 0 ? (float) $product->sale_price : (float) $product->price;
-            } else {
-                $price = 0;
-            }
-
-            $cartItems[] = array_merge([
-                'product_id' => $productId,
-                'product' => $product,
-                'name' => $product ? $product->name : (is_array($item) && isset($item['name']) ? $item['name'] : 'Sản phẩm'),
-                'price' => $price,
-                'quantity' => $quantity,
-            ], is_array($item) ? $item : []);
-
-            $subtotal += $price * $quantity;
-        }
-
+        $cartData = $this->processCartItems($cart);
         $shipping = 30000;
-        $tax = round($subtotal * 0.1);
-        $total = $subtotal + $shipping + $tax;
+        $tax = (int) round($cartData['subtotal'] * 0.1);
+        $total = $cartData['subtotal'] + $shipping + $tax;
 
         $paymentMethods = PaymentMethod::where('is_active', true)
             ->orderBy('sort_order')
             ->get();
 
         $bankAccounts = BankAccount::where('is_active', true)->get();
+        
+        $promotions = Promotion::where('is_active', true)
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->get();
 
-        return view('checkout.index', compact(
-            'cartItems',
-            'subtotal',
-            'shipping',
-            'tax',
-            'total',
-            'user',
-            'paymentMethods',
-            'bankAccounts'
-        ));
+        return view('checkout.index', [
+            'cartItems' => $cartData['items'],
+            'subtotal' => $cartData['subtotal'],
+            'shipping' => $shipping,
+            'tax' => $tax,
+            'total' => $total,
+            'user' => $user,
+            'paymentMethods' => $paymentMethods,
+            'bankAccounts' => $bankAccounts,
+            'promotions' => $promotions
+        ]);
     }
 
     public function store(Request $request)
@@ -95,31 +110,14 @@ class CheckoutController extends Controller
                 return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống');
             }
 
-            $subtotal = 0;
-            foreach ($cart as $productId => $item) {
-                $quantity = isset($item['quantity']) ? (int) $item['quantity'] : 1;
-                $product = Product::find($productId);
-                
-                // Lấy giá từ cart nếu có, nếu không lấy từ product
-                if (isset($item['price']) && $item['price'] > 0) {
-                    $price = (float) $item['price'];
-                } else if ($product) {
-                    $price = $product->sale_price > 0 ? (float) $product->sale_price : (float) $product->price;
-                } else {
-                    $price = 0;
-                }
-
-                $subtotal += $price * $quantity;
-            }
-
+            $cartData = $this->processCartItems($cart);
             $shipping = 30000;
-            $tax = round($subtotal * 0.1);
+            $tax = (int) round($cartData['subtotal'] * 0.1);
             $discount = 0;
             $promotionCode = null;
 
             // Validate promotion code if provided
-            if ($request->has('promotion_code') && !empty($request->get('promotion_code'))) {
-                $promoCode = trim(strtoupper($request->get('promotion_code')));
+            if ($promoCode = trim(strtoupper($request->input('promotion_code', '')))) {
                 $promotion = Promotion::where('code', $promoCode)
                     ->where('is_active', true)
                     ->where('start_date', '<=', now())
@@ -127,17 +125,12 @@ class CheckoutController extends Controller
                     ->first();
 
                 if ($promotion) {
-                    // Calculate discount
-                    if ($promotion->discount_type === 'percentage') {
-                        $discount = round($subtotal * ($promotion->discount_value / 100));
-                    } else {
-                        $discount = (int)$promotion->discount_value;
-                    }
+                    $discount = $promotion->calculateDiscount($cartData['subtotal']);
                     $promotionCode = $promoCode;
                 }
             }
 
-            $total = $subtotal + $shipping + $tax - $discount;
+            $total = $cartData['subtotal'] + $shipping + $tax - $discount;
 
             $order = Order::create([
                 'user_id' => $user->id,
@@ -157,25 +150,13 @@ class CheckoutController extends Controller
                 'notes' => $validated['notes'] ?? null,
             ]);
 
-            foreach ($cart as $productId => $item) {
-                $quantity = isset($item['quantity']) ? (int) $item['quantity'] : 1;
-                $product = Product::find($productId);
-                
-                // Lấy giá từ cart nếu có, nếu không lấy từ product
-                if (isset($item['price']) && $item['price'] > 0) {
-                    $price = (float) $item['price'];
-                } else if ($product) {
-                    $price = $product->sale_price > 0 ? (float) $product->sale_price : (float) $product->price;
-                } else {
-                    $price = 0;
-                }
-
+            foreach ($cartData['items'] as $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
-                    'product_id' => $productId,
-                    'quantity' => $quantity,
-                    'unit_price' => $price,
-                    'total_price' => $price * $quantity,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['price'],
+                    'total_price' => $item['price'] * $item['quantity'],
                 ]);
             }
 
@@ -207,7 +188,7 @@ class CheckoutController extends Controller
     public function validateCoupon(Request $request)
     {
         try {
-            $code = trim(strtoupper($request->get('code', '')));
+            $code = trim(strtoupper($request->input('code', '')));
             
             if (empty($code)) {
                 return response()->json([
@@ -229,7 +210,6 @@ class CheckoutController extends Controller
                 ]);
             }
 
-            // Get current cart subtotal
             $cart = session()->get('cart', []);
             if (empty($cart)) {
                 return response()->json([
@@ -238,41 +218,9 @@ class CheckoutController extends Controller
                 ]);
             }
 
-            $subtotal = 0;
-            foreach ($cart as $productId => $item) {
-                $quantity = isset($item['quantity']) ? (int) $item['quantity'] : 1;
-                $product = Product::find($productId);
-                
-                if (isset($item['price']) && $item['price'] > 0) {
-                    $price = (float) $item['price'];
-                } else if ($product) {
-                    $price = $product->sale_price > 0 ? (float) $product->sale_price : (float) $product->price;
-                } else {
-                    $price = 0;
-                }
-                $subtotal += $price * $quantity;
-            }
-
-            // Calculate discount
-            $discount = 0;
-            if ($promotion->discount_type === 'percentage') {
-                $discount = round($subtotal * ($promotion->discount_value / 100));
-            } else {
-                $discount = (int)$promotion->discount_value;
-            }
-
-            // Add conditions message if needed
-            $conditions = [];
-            if ($subtotal < 500000) {
-                $conditions[] = 'Đơn hàng tối thiểu 500.000₫';
-            }
-
-            if (!empty($conditions)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Điều kiện áp dụng: ' . implode(', ', $conditions)
-                ]);
-            }
+            $cartData = $this->processCartItems($cart);
+            $discount = $promotion->calculateDiscount($cartData['subtotal']);
+            $isShippingDiscount = $promotion->isShippingDiscount();
 
             return response()->json([
                 'success' => true,
@@ -281,7 +229,8 @@ class CheckoutController extends Controller
                 'discount' => $discount,
                 'discount_text' => number_format($discount, 0, ',', '.'),
                 'discount_type' => $promotion->discount_type,
-                'discount_value' => $promotion->discount_value
+                'discount_value' => $promotion->discount_value,
+                'is_shipping_discount' => $isShippingDiscount
             ]);
         } catch (\Exception $e) {
             return response()->json([

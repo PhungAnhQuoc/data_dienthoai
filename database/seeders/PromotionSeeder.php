@@ -62,6 +62,17 @@ class PromotionSeeder extends Seeder
         ]);
 
         Promotion::create([
+            'title' => 'Khuyến mãi Tết 2025',
+            'description' => 'Giảm 100.000₫ cho đơn hàng từ 500.000₫',
+            'code' => 'TET10',
+            'discount_type' => 'fixed',
+            'discount_value' => 100000,
+            'start_date' => Carbon::now()->subDay(),
+            'end_date' => Carbon::now()->addMonths(2),
+            'is_active' => true,
+        ]);
+
+        Promotion::create([
             'title' => 'Khuyến mãi Ngày lễ',
             'description' => 'Giảm 15% cho tất cả sản phẩm',
             'code' => 'HOLIDAY15',
@@ -72,6 +83,6 @@ class PromotionSeeder extends Seeder
             'is_active' => false, // Vô hiệu hóa
         ]);
 
-        echo "✅ Đã tạo 5 mã ưu đãi mẫu thành công!\n";
+        echo "✅ Đã tạo 6 mã ưu đãi mẫu thành công!\n";
     }
 }

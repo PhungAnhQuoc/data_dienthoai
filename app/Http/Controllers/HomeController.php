@@ -1,5 +1,5 @@
 <?php
-// app/Http/Controllers/HomeController.php
+
 namespace App\Http\Controllers;
 
 use App\Models\Product;
@@ -8,7 +8,6 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Promotion;
 use App\Models\BlogPost;
-use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {

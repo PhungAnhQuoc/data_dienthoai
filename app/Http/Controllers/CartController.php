@@ -1,5 +1,5 @@
 <?php
-// app/Http/Controllers/CartController.php
+
 namespace App\Http\Controllers;
 
 use App\Models\Product;
@@ -8,15 +8,19 @@ use Illuminate\Support\Facades\Session;
 
 class CartController extends Controller
 {
-    public function index()
+    private function getCartTotal(array $cart): array
     {
-        $cart = Session::get('cart', []);
-        $total = 0;
+        if (empty($cart)) {
+            return ['items' => [], 'total' => 0];
+        }
+
+        $products = Product::whereIn('id', array_keys($cart))->get()->keyBy('id');
         $cartItems = [];
+        $total = 0;
 
         foreach ($cart as $id => $details) {
-            $product = Product::find($id);
-            if ($product) {
+            if ($products->has($id)) {
+                $product = $products->get($id);
                 $price = $product->sale_price ?? $product->price;
                 $subtotal = $price * $details['quantity'];
                 $total += $subtotal;
@@ -31,7 +35,15 @@ class CartController extends Controller
             }
         }
 
-        return view('cart.index', compact('cartItems', 'total'));
+        return ['items' => $cartItems, 'total' => $total];
+    }
+
+    public function index()
+    {
+        $cart = Session::get('cart', []);
+        $result = $this->getCartTotal($cart);
+
+        return view('cart.index', ['cartItems' => $result['items'], 'total' => $result['total']]);
     }
 
     public function add(Request $request)
@@ -95,32 +107,17 @@ class CartController extends Controller
             ]);
         }
 
-        if (isset($cart[$id])) {
-            $cart[$id]['quantity'] = $request->quantity;
-            Session::put('cart', $cart);
+        $cart[$id]['quantity'] = $request->quantity;
+        Session::put('cart', $cart);
 
-            $price = $product->sale_price ?? $product->price;
-            $subtotal = $price * $request->quantity;
-            
-            $total = 0;
-            foreach ($cart as $cartId => $details) {
-                $cartProduct = Product::find($cartId);
-                if ($cartProduct) {
-                    $cartPrice = $cartProduct->sale_price ?? $cartProduct->price;
-                    $total += $cartPrice * $details['quantity'];
-                }
-            }
-
-            return response()->json([
-                'success' => true,
-                'subtotal' => number_format($subtotal, 0, ',', '.') . 'đ',
-                'total' => number_format($total, 0, ',', '.') . 'đ'
-            ]);
-        }
+        $price = $product->sale_price ?? $product->price;
+        $subtotal = $price * $request->quantity;
+        $result = $this->getCartTotal($cart);
 
         return response()->json([
-            'success' => false,
-            'message' => 'Sản phẩm không tồn tại trong giỏ hàng!'
+            'success' => true,
+            'subtotal' => number_format($subtotal, 0, ',', '.') . 'đ',
+            'total' => number_format($result['total'], 0, ',', '.') . 'đ'
         ]);
     }
 

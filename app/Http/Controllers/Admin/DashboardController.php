@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Brand;
 use App\Models\Order;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -23,7 +24,7 @@ class DashboardController extends Controller
             'total_revenue' => Order::where('status', '!=', 'cancelled')->sum('total_amount'),
             'total_orders' => Order::where('status', '!=', 'cancelled')->count(),
             'pending_orders' => Order::where('status', 'pending')->count(),
-            'sold_count' => Order::where('status', 'completed')->count(),
+            'sold_count' => OrderItem::sum('quantity'),
         ];
 
         $recentProducts = Product::with(['category', 'brand'])

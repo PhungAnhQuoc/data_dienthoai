@@ -71,6 +71,30 @@
     </div>
 </div>
 
+<!-- Charts Row -->
+<div class="row mt-4">
+    <div class="col-md-8 mb-3">
+        <div class="card" style="border: none; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
+            <div class="card-header bg-white border-bottom" style="border-radius: 12px 12px 0 0; padding: 20px; border-bottom: 1px solid #e8edf2;">
+                <h5 class="mb-0" style="font-size: 16px; font-weight: 600; color: #2c3e50;">Doanh thu theo tháng</h5>
+            </div>
+            <div class="card-body" style="padding: 20px;">
+                <canvas id="revenueChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card" style="border: none; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
+            <div class="card-header bg-white border-bottom" style="border-radius: 12px 12px 0 0; padding: 20px; border-bottom: 1px solid #e8edf2;">
+                <h5 class="mb-0" style="font-size: 16px; font-weight: 600; color: #2c3e50;">Phân loại sản phẩm</h5>
+            </div>
+            <div class="card-body" style="padding: 20px;">
+                <canvas id="categoryChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Đơn Hàng Mới / Recent Orders -->
 <div class="row">
     <div class="col-12">
@@ -137,30 +161,6 @@
                         <?php endif; ?>
                     </tbody>
                 </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Charts Row -->
-<div class="row mt-4">
-    <div class="col-md-8 mb-3">
-        <div class="card" style="border: none; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
-            <div class="card-header bg-white border-bottom" style="border-radius: 12px 12px 0 0; padding: 20px; border-bottom: 1px solid #e8edf2;">
-                <h5 class="mb-0" style="font-size: 16px; font-weight: 600; color: #2c3e50;">Doanh thu theo tháng</h5>
-            </div>
-            <div class="card-body" style="padding: 20px;">
-                <canvas id="revenueChart" style="max-height: 300px;"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-3">
-        <div class="card" style="border: none; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
-            <div class="card-header bg-white border-bottom" style="border-radius: 12px 12px 0 0; padding: 20px; border-bottom: 1px solid #e8edf2;">
-                <h5 class="mb-0" style="font-size: 16px; font-weight: 600; color: #2c3e50;">Phân loại sản phẩm</h5>
-            </div>
-            <div class="card-body" style="padding: 20px;">
-                <canvas id="categoryChart" style="max-height: 300px;"></canvas>
             </div>
         </div>
     </div>

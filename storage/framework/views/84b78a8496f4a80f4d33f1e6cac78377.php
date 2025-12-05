@@ -1,6 +1,4 @@
-@extends('layouts.app')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <style>
 :root {
     --primary: #0066ff;
@@ -314,46 +312,49 @@
 <!-- Blog Content -->
 <div class="blog-container">
     <div class="container">
-        @if($posts->count() > 0)
+        <?php if($posts->count() > 0): ?>
             <!-- Blog Cards Grid -->
             <div class="blog-posts">
-                @forelse($posts as $post)
-                    <a href="{{ route('blog.show', $post->slug) }}" class="blog-card">
-                        <div class="blog-card-image @if(!$post->featured_image) no-image @endif">
-                            @if($post->featured_image)
-                                <img src="{{ asset('storage/' . $post->featured_image) }}" alt="{{ $post->title }}">
-                            @else
+                <?php $__empty_1 = true; $__currentLoopData = $posts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $post): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                    <a href="<?php echo e(route('blog.show', $post->slug)); ?>" class="blog-card">
+                        <div class="blog-card-image <?php if(!$post->featured_image): ?> no-image <?php endif; ?>">
+                            <?php if($post->featured_image): ?>
+                                <img src="<?php echo e(asset('storage/' . $post->featured_image)); ?>" alt="<?php echo e($post->title); ?>">
+                            <?php else: ?>
                                 <span>📰</span>
-                            @endif
+                            <?php endif; ?>
                         </div>
                         <div class="blog-card-body">
-                            <h3 class="blog-card-title">{{ $post->title }}</h3>
-                            <p class="blog-card-excerpt">{{ Str::limit($post->excerpt ?? $post->content, 100) }}</p>
+                            <h3 class="blog-card-title"><?php echo e($post->title); ?></h3>
+                            <p class="blog-card-excerpt"><?php echo e(Str::limit($post->excerpt ?? $post->content, 100)); ?></p>
                             <div class="blog-card-meta">
-                                <span class="blog-card-date">{{ $post->published_at->format('d/m/Y') }}</span>
+                                <span class="blog-card-date"><?php echo e($post->published_at->format('d/m/Y')); ?></span>
                                 <span class="blog-card-link"></span>
                             </div>
                         </div>
                     </a>
-                @empty
-                @endforelse
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                <?php endif; ?>
             </div>
 
             <!-- Pagination -->
-            @if($posts instanceof \Illuminate\Pagination\LengthAwarePaginator && $posts->hasPages())
+            <?php if($posts instanceof \Illuminate\Pagination\LengthAwarePaginator && $posts->hasPages()): ?>
             <div class="pagination-wrapper">
-                {{ $posts->links() }}
+                <?php echo e($posts->links()); ?>
+
             </div>
-            @endif
-        @else
+            <?php endif; ?>
+        <?php else: ?>
             <!-- Empty State -->
             <div class="empty-state">
                 <div class="empty-state-icon">📚</div>
                 <h3>Chưa có bài viết nào</h3>
                 <p>Vui lòng quay lại sau để xem những bài viết mới nhất</p>
             </div>
-        @endif
+        <?php endif; ?>
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\mobile-shop-master\resources\views/blog/index.blade.php ENDPATH**/ ?>

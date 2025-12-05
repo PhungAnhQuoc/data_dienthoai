@@ -30,7 +30,7 @@
                         <td>{{ $blog->title }}</td>
                         <td><span class="badge bg-secondary">{{ $blog->slug }}</span></td>
                         <td>
-                            @if ($blog->is_published)
+                            @if ($blog->is_active)
                                 <span class="badge bg-success">Xuất Bản</span>
                             @else
                                 <span class="badge bg-warning">Nháp</span>

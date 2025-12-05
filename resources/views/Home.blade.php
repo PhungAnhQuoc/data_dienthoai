@@ -80,10 +80,10 @@
                         <p class="text-muted small">{{ $promotion->description }}</p>
                         <div class="fw-bold text-primary">
                             @if($promotion->discount_value > 0)
-                                @if($promotion->discount_value >= 100)
+                                @if($promotion->discount_type === 'percentage')
                                     Giảm: <span class="text-dark">{{ intval($promotion->discount_value) }}%</span>
                                 @else
-                                    Giảm: <span class="text-dark">{{ number_format($promotion->discount_value) }}đ</span>
+                                    Giảm: <span class="text-dark">{{ number_format($promotion->discount_value, 0, ',', '.') }}đ</span>
                                 @endif
                             @else
                                 {{ $promotion->title }}

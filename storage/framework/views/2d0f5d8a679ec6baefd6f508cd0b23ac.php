@@ -80,10 +80,10 @@
                         <p class="text-muted small"><?php echo e($promotion->description); ?></p>
                         <div class="fw-bold text-primary">
                             <?php if($promotion->discount_value > 0): ?>
-                                <?php if($promotion->discount_value >= 100): ?>
+                                <?php if($promotion->discount_type === 'percentage'): ?>
                                     Giảm: <span class="text-dark"><?php echo e(intval($promotion->discount_value)); ?>%</span>
                                 <?php else: ?>
-                                    Giảm: <span class="text-dark"><?php echo e(number_format($promotion->discount_value)); ?>đ</span>
+                                    Giảm: <span class="text-dark"><?php echo e(number_format($promotion->discount_value, 0, ',', '.')); ?>đ</span>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <?php echo e($promotion->title); ?>
