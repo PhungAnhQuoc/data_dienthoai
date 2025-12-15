@@ -41,24 +41,40 @@
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <img src="{{ asset('storage/' . $item['product']->main_image) }}" 
-                                                 alt="{{ $item['product']->name }}"
-                                                 class="rounded me-3"
-                                                 style="width: 80px; height: 80px; object-fit: cover;">
-                                            <div>
-                                                <h6 class="mb-1">
-                                                    <a href="{{ route('products.show', $item['product']->slug) }}" 
-                                                       class="text-decoration-none text-dark">
-                                                        {{ $item['product']->name }}
-                                                    </a>
-                                                </h6>
-                                                <small class="text-muted">{{ $item['product']->brand->name }}</small>
-                                                @if($item['product']->stock < 10)
-                                                <div class="badge bg-warning text-dark mt-1">
-                                                    Chỉ còn {{ $item['product']->stock }} sản phẩm
+                                            @if($item['isFlashSale'])
+                                                <img src="{{ $item['flashSale']->image ? asset('storage/' . $item['flashSale']->image) : asset('images/placeholder.jpg') }}" 
+                                                     alt="{{ $item['flashSale']->title }}"
+                                                     class="rounded me-3"
+                                                     style="width: 80px; height: 80px; object-fit: cover;">
+                                                <div>
+                                                    <h6 class="mb-1">
+                                                        <a href="{{ route('flash-sales.show', $item['flashSale']->id) }}" 
+                                                           class="text-decoration-none text-dark">
+                                                            {{ $item['flashSale']->title }}
+                                                        </a>
+                                                    </h6>
+                                                    <div class="badge bg-danger">⚡ Flash Sale</div>
                                                 </div>
-                                                @endif
-                                            </div>
+                                            @else
+                                                <img src="{{ asset('storage/' . $item['product']->main_image) }}" 
+                                                     alt="{{ $item['product']->name }}"
+                                                     class="rounded me-3"
+                                                     style="width: 80px; height: 80px; object-fit: cover;">
+                                                <div>
+                                                    <h6 class="mb-1">
+                                                        <a href="{{ route('products.show', $item['product']->slug) }}" 
+                                                           class="text-decoration-none text-dark">
+                                                            {{ $item['product']->name }}
+                                                        </a>
+                                                    </h6>
+                                                    <small class="text-muted">{{ $item['product']->brand->name }}</small>
+                                                    @if($item['product']->stock < 10)
+                                                    <div class="badge bg-warning text-dark mt-1">
+                                                        Chỉ còn {{ $item['product']->stock }} sản phẩm
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                            @endif
                                         </div>
                                     </td>
                                     <td class="text-center">
@@ -71,7 +87,7 @@
                                             <div class="input-group" style="max-width: 130px;">
                                                 <button class="btn btn-outline-secondary btn-sm" 
                                                         type="button"
-                                                            onclick="updateQuantity({{ $item['id'] }}, {{ $item['quantity'] - 1 }})"
+                                                            onclick="updateQuantity('{{ $item['id'] }}', {{ $item['quantity'] - 1 }})"
                                                             @if($item['quantity'] <= 1) disabled @endif>
                                                     <i class="bi bi-dash"></i>
                                                 </button>
@@ -80,12 +96,16 @@
                                                        id="quantity-{{ $item['id'] }}"
                                                        value="{{ $item['quantity'] }}" 
                                                        min="1"
-                                                       max="{{ $item['product']->stock }}"
-                                                       onchange="updateQuantity({{ $item['id'] }}, this.value)">
+                                                       @if($item['isFlashSale'])
+                                                           max="999"
+                                                       @else
+                                                           max="{{ $item['product']->stock }}"
+                                                       @endif
+                                                       onchange="updateQuantity('{{ $item['id'] }}', this.value)">
                                                 <button class="btn btn-outline-secondary btn-sm" 
                                                         type="button"
-                                                            onclick="updateQuantity({{ $item['id'] }}, {{ $item['quantity'] + 1 }})"
-                                                            @if($item['quantity'] >= $item['product']->stock) disabled @endif>
+                                                            onclick="updateQuantity('{{ $item['id'] }}', {{ $item['quantity'] + 1 }})"
+                                                            @if(!$item['isFlashSale'] && $item['quantity'] >= $item['product']->stock) disabled @endif>
                                                     <i class="bi bi-plus"></i>
                                                 </button>
                                             </div>

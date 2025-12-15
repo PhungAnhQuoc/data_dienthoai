@@ -14,8 +14,6 @@ toastr.options = {
     hideDuration: "500",
     timeOut: "4000",
     extendedTimeOut: "1000",
-    showEasing: "easeOutQuad",
-    hideEasing: "easeInQuad",
     showMethod: "fadeIn",
     hideMethod: "fadeOut",
 };

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\OrderStatusChanged;
 use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
@@ -24,13 +25,20 @@ class Order extends Model
         'notes',
         'shipped_at',
         'delivered_at',
-        'cancelled_at'
+        'cancelled_at',
+        'transaction_id',
+        'payment_response'
     ];
 
     protected $casts = [
         'shipped_at' => 'datetime',
         'delivered_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'payment_response' => 'json',
+    ];
+
+    protected $dispatchesEvents = [
+        'updated' => OrderStatusChanged::class,
     ];
 
     // Relationships
@@ -46,7 +54,7 @@ class Order extends Model
 
     public function paymentMethod()
     {
-        return $this->belongsTo(PaymentMethod::class);
+        return $this->belongsTo(PaymentMethod::class, 'payment_method');
     }
 
     // Generate order number

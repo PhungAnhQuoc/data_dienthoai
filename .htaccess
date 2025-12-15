@@ -1,0 +1,9 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c> Options -MultiViews -Indexes </IfModule>
+
+    RewriteEngine On RewriteBase /mobile-shop-master/ # Don't rewrite files or
+    directories RewriteCond %{REQUEST_FILENAME} !-f RewriteCond
+    %{REQUEST_FILENAME} !-d # Handle the public folder rewrite RewriteCond
+    %{REQUEST_URI} !^/mobile-shop-master/public/ RewriteRule ^(.*)$ public/$1
+    [L]
+</IfModule>

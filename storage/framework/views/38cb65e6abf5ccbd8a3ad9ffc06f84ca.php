@@ -41,25 +41,42 @@
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <img src="<?php echo e(asset('storage/' . $item['product']->main_image)); ?>" 
-                                                 alt="<?php echo e($item['product']->name); ?>"
-                                                 class="rounded me-3"
-                                                 style="width: 80px; height: 80px; object-fit: cover;">
-                                            <div>
-                                                <h6 class="mb-1">
-                                                    <a href="<?php echo e(route('products.show', $item['product']->slug)); ?>" 
-                                                       class="text-decoration-none text-dark">
-                                                        <?php echo e($item['product']->name); ?>
+                                            <?php if($item['isFlashSale']): ?>
+                                                <img src="<?php echo e($item['flashSale']->image ? asset('storage/' . $item['flashSale']->image) : asset('images/placeholder.jpg')); ?>" 
+                                                     alt="<?php echo e($item['flashSale']->title); ?>"
+                                                     class="rounded me-3"
+                                                     style="width: 80px; height: 80px; object-fit: cover;">
+                                                <div>
+                                                    <h6 class="mb-1">
+                                                        <a href="<?php echo e(route('flash-sales.show', $item['flashSale']->id)); ?>" 
+                                                           class="text-decoration-none text-dark">
+                                                            <?php echo e($item['flashSale']->title); ?>
 
-                                                    </a>
-                                                </h6>
-                                                <small class="text-muted"><?php echo e($item['product']->brand->name); ?></small>
-                                                <?php if($item['product']->stock < 10): ?>
-                                                <div class="badge bg-warning text-dark mt-1">
-                                                    Chỉ còn <?php echo e($item['product']->stock); ?> sản phẩm
+                                                        </a>
+                                                    </h6>
+                                                    <div class="badge bg-danger">⚡ Flash Sale</div>
                                                 </div>
-                                                <?php endif; ?>
-                                            </div>
+                                            <?php else: ?>
+                                                <img src="<?php echo e(asset('storage/' . $item['product']->main_image)); ?>" 
+                                                     alt="<?php echo e($item['product']->name); ?>"
+                                                     class="rounded me-3"
+                                                     style="width: 80px; height: 80px; object-fit: cover;">
+                                                <div>
+                                                    <h6 class="mb-1">
+                                                        <a href="<?php echo e(route('products.show', $item['product']->slug)); ?>" 
+                                                           class="text-decoration-none text-dark">
+                                                            <?php echo e($item['product']->name); ?>
+
+                                                        </a>
+                                                    </h6>
+                                                    <small class="text-muted"><?php echo e($item['product']->brand->name); ?></small>
+                                                    <?php if($item['product']->stock < 10): ?>
+                                                    <div class="badge bg-warning text-dark mt-1">
+                                                        Chỉ còn <?php echo e($item['product']->stock); ?> sản phẩm
+                                                    </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                     <td class="text-center">
@@ -72,7 +89,7 @@
                                             <div class="input-group" style="max-width: 130px;">
                                                 <button class="btn btn-outline-secondary btn-sm" 
                                                         type="button"
-                                                            onclick="updateQuantity(<?php echo e($item['id']); ?>, <?php echo e($item['quantity'] - 1); ?>)"
+                                                            onclick="updateQuantity('<?php echo e($item['id']); ?>', <?php echo e($item['quantity'] - 1); ?>)"
                                                             <?php if($item['quantity'] <= 1): ?> disabled <?php endif; ?>>
                                                     <i class="bi bi-dash"></i>
                                                 </button>
@@ -81,12 +98,16 @@
                                                        id="quantity-<?php echo e($item['id']); ?>"
                                                        value="<?php echo e($item['quantity']); ?>" 
                                                        min="1"
-                                                       max="<?php echo e($item['product']->stock); ?>"
-                                                       onchange="updateQuantity(<?php echo e($item['id']); ?>, this.value)">
+                                                       <?php if($item['isFlashSale']): ?>
+                                                           max="999"
+                                                       <?php else: ?>
+                                                           max="<?php echo e($item['product']->stock); ?>"
+                                                       <?php endif; ?>
+                                                       onchange="updateQuantity('<?php echo e($item['id']); ?>', this.value)">
                                                 <button class="btn btn-outline-secondary btn-sm" 
                                                         type="button"
-                                                            onclick="updateQuantity(<?php echo e($item['id']); ?>, <?php echo e($item['quantity'] + 1); ?>)"
-                                                            <?php if($item['quantity'] >= $item['product']->stock): ?> disabled <?php endif; ?>>
+                                                            onclick="updateQuantity('<?php echo e($item['id']); ?>', <?php echo e($item['quantity'] + 1); ?>)"
+                                                            <?php if(!$item['isFlashSale'] && $item['quantity'] >= $item['product']->stock): ?> disabled <?php endif; ?>>
                                                     <i class="bi bi-plus"></i>
                                                 </button>
                                             </div>

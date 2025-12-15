@@ -4,9 +4,53 @@
 
 @section('content')
 <div class="container py-4">
-    <div class="row">
-        <!-- Sidebar Filter -->
-        <div class="col-lg-3 mb-4">
+    <div class="row g-3 g-lg-4">
+        <!-- Sidebar Filter - Hidden on mobile, sticky on desktop -->
+        <div class="col-lg-3 mb-4 mb-lg-0">
+            <button class="btn btn-primary w-100 d-lg-none mb-3" 
+                    data-bs-toggle="offcanvas" 
+                    data-bs-target="#filterOffcanvas"
+                    aria-controls="filterOffcanvas">
+                <i class="bi bi-funnel me-2"></i>Bộ lọc
+            </button>
+
+            <!-- Filter Offcanvas for Mobile -->
+            <div class="offcanvas offcanvas-start" tabindex="-1" id="filterOffcanvas">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title">Bộ lọc</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+                </div>
+                <div class="offcanvas-body p-0">
+                    <filterContent></filterContent>
+                </div>
+            </div>
+
+            <!-- Filter Sidebar for Desktop -->
+            <div class="d-none d-lg-block">
+                <filterContent></filterContent>
+            </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="col-lg-9">
+            <!-- Results Header -->
+            <div class="mb-4">
+                <div class="row align-items-center">
+                    <div class="col-12 col-sm-6">
+                        <h4 class="fw-bold mb-2 mb-sm-0">
+                            Sản phẩm
+                            @if(request('search'))
+                                <span class="text-muted small">- "{{ request('search') }}"</span>
+                            @endif
+                        </h4>
+                    </div>
+                    <div class="col-12 col-sm-6 text-sm-end">
+                        <small class="text-muted">Tìm thấy {{ $products->total() }} sản phẩm</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products -->
             <div class="card border-0 shadow-sm sticky-top" style="top: 100px;">
                 <div class="card-body">
                     <h5 class="fw-bold mb-4">
@@ -139,7 +183,53 @@
 
                         <hr>
 
-                        <!-- Sort -->
+                        <!-- Rating Filter -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Đánh giá</label>
+                            <div class="form-check">
+                                <input class="form-check-input" 
+                                       type="radio" 
+                                       name="min_rating" 
+                                       value=""
+                                       id="rating_all"
+                                       {{ !request('min_rating') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="rating_all">
+                                    Tất cả
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" 
+                                       type="radio" 
+                                       name="min_rating" 
+                                       value="4"
+                                       id="rating_4"
+                                       {{ request('min_rating') == '4' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="rating_4">
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star text-muted"></i> 4+ sao
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" 
+                                       type="radio" 
+                                       name="min_rating" 
+                                       value="3"
+                                       id="rating_3"
+                                       {{ request('min_rating') == '3' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="rating_3">
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <i class="bi bi-star text-muted"></i>
+                                    <i class="bi bi-star text-muted"></i> 3+ sao
+                                </label>
+                            </div>
+                        </div>
+
+                        <hr>
                         <div class="mb-4">
                             <label class="form-label fw-bold">Sắp xếp</label>
                             <select class="form-select form-select-sm rounded-3" name="sort">

@@ -305,6 +305,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('admin.flash-sales.index') }}" class="@if(request()->is('admin/flash-sales*')) active @endif">
+                        <i class="bi bi-lightning-charge"></i>
+                        <span>Flash Sale</span>
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('admin.contact.index') }}">
                         <i class="bi bi-envelope"></i>
                         <span>Liên hệ</span>

@@ -34,11 +34,12 @@
                                 <?php
                                     $price = $item->unit_price > 0 ? $item->unit_price : ($item->product->sale_price > 0 ? $item->product->sale_price : $item->product->price);
                                     $totalPrice = $item->total_price > 0 ? $item->total_price : ($price * $item->quantity);
+                                    $productImage = $item->product->main_image ? asset('storage/' . $item->product->main_image) : ($item->product->images->first() ? asset('storage/' . $item->product->images->first()->image_url) : null);
                                 ?>
                                 <div class="d-flex align-items-center py-3 border-bottom">
                                     <div class="me-3" style="width:64px;height:64px; background:#f5f6f8; display:flex;align-items:center;justify-content:center;">
-                                        <?php if(isset($item->product->image_url)): ?>
-                                            <img src="<?php echo e($item->product->image_url); ?>" alt="" class="img-fluid" style="max-height:60px;">
+                                        <?php if($productImage): ?>
+                                            <img src="<?php echo e($productImage); ?>" alt="<?php echo e($item->product->name); ?>" class="img-fluid" style="max-height:60px;object-fit:contain;">
                                         <?php endif; ?>
                                     </div>
                                     <div class="flex-grow-1">
@@ -84,10 +85,49 @@
 
                     <div class="card mb-3">
                         <div class="card-body">
-                            <h6 class="mb-2">Phương thức thanh toán</h6>
-                            <div class="small text-muted"><?php if($paymentMethod): ?> <?php echo e($paymentMethod->display_name); ?> <?php endif; ?></div>
+                            <h6 class="mb-2">Trạng thái thanh toán</h6>
+                            <?php if($order->payment_status === 'paid'): ?>
+                                <span class="badge bg-success">✓ Đã thanh toán</span>
+                            <?php elseif($order->payment_status === 'failed'): ?>
+                                <span class="badge bg-danger">✗ Thanh toán thất bại</span>
+                            <?php else: ?>
+                                <span class="badge bg-warning">⏳ Chờ thanh toán</span>
+                            <?php endif; ?>
                         </div>
                     </div>
+
+                    <!-- Payment Section -->
+                    <?php if($order->payment_status !== 'paid'): ?>
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h6 class="mb-3">Thanh toán ngay</h6>
+                            <a href="<?php echo e(route('payment.vnpay', $order->id)); ?>" class="btn btn-primary w-100 mb-2">
+                                <i class="bi bi-credit-card me-2"></i>Thanh toán qua VNPay
+                            </a>
+                            <small class="text-muted d-block">Hoặc chuyển khoản thủ công (xem dưới)</small>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="mb-2">Phương thức thanh toán</h6>
+                            <div class="small text-muted"><?php if($paymentMethod): ?> <?php echo e($paymentMethod->display_name); ?> <?php endif; ?></div>
+                            
+                            <!-- Bank transfer info if using bank method -->
+                            <?php if($paymentMethod && $paymentMethod->slug === 'bank-transfer' && $bankAccounts->count() > 0): ?>
+                            <hr>
+                            <div class="small">
+                                <strong>Thông tin chuyển khoản:</strong>
+                                <?php $__currentLoopData = $bankAccounts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $account): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <div class="mt-2 p-2 bg-light rounded">
+                                    <div><?php echo e($account->bank_name); ?></div>
+                                    <div><strong><?php echo e($account->account_number); ?></strong></div>
+                                    <div class="text-muted">Chủ tài khoản: <?php echo e($account->account_holder); ?></div>
+                                </div>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </div>
+                            <?php endif; ?>
 
                     <div class="card mb-3">
                         <div class="card-body">

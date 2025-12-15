@@ -7,6 +7,7 @@ use App\Models\OrderItem;
 use App\Models\PaymentMethod;
 use App\Models\BankAccount;
 use App\Models\Product;
+use App\Models\FlashSale;
 use App\Models\Promotion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,29 +25,65 @@ class CheckoutController extends Controller
             return ['items' => [], 'subtotal' => 0, 'products' => []];
         }
 
-        $products = Product::whereIn('id', array_keys($cart))->get()->keyBy('id');
+        // Separate regular products and flash sales
+        $productIds = [];
+        $flashSaleIds = [];
+        
+        foreach ($cart as $id => $details) {
+            if (strpos($id, 'flash_sale_') === 0) {
+                $flashSaleIds[] = $details['flash_sale_id'] ?? str_replace('flash_sale_', '', $id);
+            } else {
+                $productIds[] = $id;
+            }
+        }
+
+        $products = !empty($productIds) ? Product::whereIn('id', $productIds)->get()->keyBy('id') : collect();
+        $flashSales = !empty($flashSaleIds) ? FlashSale::whereIn('id', $flashSaleIds)->get()->keyBy('id') : collect();
+        
         $cartItems = [];
         $subtotal = 0;
 
-        foreach ($cart as $productId => $item) {
-            $product = $products->get($productId);
-            $quantity = (int) ($item['quantity'] ?? 1);
-            
-            $price = $item['price'] ?? null;
-            if (!$price && $product) {
-                $price = $product->sale_price > 0 ? $product->sale_price : $product->price;
-            }
-            $price = (float) ($price ?? 0);
+        foreach ($cart as $id => $item) {
+            // Handle Flash Sale Items
+            if (strpos($id, 'flash_sale_') === 0) {
+                $flashSaleId = $item['flash_sale_id'] ?? str_replace('flash_sale_', '', $id);
+                if ($flashSales->has($flashSaleId)) {
+                    $flashSale = $flashSales->get($flashSaleId);
+                    $quantity = (int) ($item['quantity'] ?? 1);
+                    $price = (float) $flashSale->sale_price;
+                    
+                    $cartItems[] = [
+                        'flash_sale_id' => $flashSaleId,
+                        'flashSale' => $flashSale,
+                        'name' => $flashSale->title,
+                        'price' => $price,
+                        'quantity' => $quantity,
+                        'isFlashSale' => true
+                    ];
+                    $subtotal += $price * $quantity;
+                }
+            } else {
+                // Handle Regular Product Items
+                if ($products->has($id)) {
+                    $product = $products->get($id);
+                    $quantity = (int) ($item['quantity'] ?? 1);
+                    
+                    $price = $item['price'] ?? null;
+                    if (!$price) {
+                        $price = $product->sale_price > 0 ? $product->sale_price : $product->price;
+                    }
+                    $price = (float) $price;
 
-            if ($product) {
-                $cartItems[] = [
-                    'product_id' => $productId,
-                    'product' => $product,
-                    'name' => $product->name,
-                    'price' => $price,
-                    'quantity' => $quantity,
-                ];
-                $subtotal += $price * $quantity;
+                    $cartItems[] = [
+                        'product_id' => $id,
+                        'product' => $product,
+                        'name' => $product->name,
+                        'price' => $price,
+                        'quantity' => $quantity,
+                        'isFlashSale' => false
+                    ];
+                    $subtotal += $price * $quantity;
+                }
             }
         }
 
@@ -99,6 +136,7 @@ class CheckoutController extends Controller
                 'shipping_email' => 'required|email',
                 'shipping_phone' => 'required|string|max:20',
                 'shipping_address' => 'required|string|max:500',
+                'shipping_method' => 'required|in:standard,fast',
                 'payment_method_id' => 'required|exists:payment_methods,id',
                 'notes' => 'nullable|string|max:500',
             ]);
@@ -111,7 +149,8 @@ class CheckoutController extends Controller
             }
 
             $cartData = $this->processCartItems($cart);
-            $shipping = 30000;
+            // Lấy phí vận chuyển từ form dựa trên phương thức được chọn
+            $shipping = $validated['shipping_method'] === 'fast' ? 50000 : 30000;
             $tax = (int) round($cartData['subtotal'] * 0.1);
             $discount = 0;
             $promotionCode = null;
@@ -151,13 +190,26 @@ class CheckoutController extends Controller
             ]);
 
             foreach ($cartData['items'] as $item) {
-                OrderItem::create([
+                $orderItemData = [
                     'order_id' => $order->id,
-                    'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['price'],
                     'total_price' => $item['price'] * $item['quantity'],
-                ]);
+                ];
+
+                // Handle regular products vs flash sales
+                if (!empty($item['product_id'])) {
+                    $orderItemData['product_id'] = $item['product_id'];
+                } else if (!empty($item['flash_sale_id'])) {
+                    // For flash sales, store as flash_sale_id
+                    $orderItemData['flash_sale_id'] = $item['flash_sale_id'];
+                    // Also try to get product_id from flash sale if linked
+                    if ($item['flashSale']->product_id) {
+                        $orderItemData['product_id'] = $item['flashSale']->product_id;
+                    }
+                }
+
+                OrderItem::create($orderItemData);
             }
 
             session()->forget('cart');

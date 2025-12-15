@@ -1,7 +1,103 @@
-// Body
-$body-bg: #f8fafc;
+// ===========================
+// COLOR PALETTE
+// ===========================
 
-// Typography
-$font-family-sans-serif: 'Nunito', sans-serif;
+// Primary colors
+$primary: #0d6efd;
+$primary-dark: #0b5ed7;
+$primary-light: #3d8bfd;
+$primary-lighter: #e7f1ff;
+
+// Secondary colors
+$secondary: #6c757d;
+$secondary-dark: #5a6268;
+
+// Accent colors
+$accent-orange: #ff9800;
+$accent-red: #dc3545;
+$accent-green: #28a745;
+$accent-blue: #0dcaf0;
+$accent-purple: #6f42c1;
+
+// Neutral colors
+$gray-50: #f9fafb;
+$gray-100: #f3f4f6;
+$gray-200: #e5e7eb;
+$gray-300: #d1d5db;
+$gray-400: #9ca3af;
+$gray-500: #6b7280;
+$gray-600: #4b5563;
+$gray-700: #374151;
+$gray-800: #1f2937;
+$gray-900: #111827;
+
+// Background
+$body-bg: #f9fafb;
+$bg-light: #ffffff;
+$bg-subtle: #f3f4f6;
+
+// Semantic colors
+$success: #28a745;
+$warning: #ffc107;
+$danger: #dc3545;
+$info: #0dcaf0;
+
+// Shadow palette
+$shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+$shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+
+// ===========================
+// TYPOGRAPHY
+// ===========================
+
+$font-family-sans-serif: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+$font-family-base: $font-family-sans-serif;
 $font-size-base: 0.9rem;
 $line-height-base: 1.6;
+
+// Font weights
+$font-weight-light: 300;
+$font-weight-normal: 400;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+$font-weight-heavy: 800;
+
+// ===========================
+// SPACING
+// ===========================
+
+$spacer: 1rem;
+$spacers: (
+  0: 0,
+  1: ($spacer * 0.25),
+  2: ($spacer * 0.5),
+  3: ($spacer),
+  4: ($spacer * 1.5),
+  5: ($spacer * 3),
+  6: ($spacer * 4),
+  7: ($spacer * 5),
+);
+
+// ===========================
+// BORDER & RADIUS
+// ===========================
+
+$border-radius-sm: 0.25rem;
+$border-radius: 0.375rem;
+$border-radius-md: 0.5rem;
+$border-radius-lg: 0.75rem;
+$border-radius-xl: 1rem;
+$border-radius-2xl: 1.5rem;
+$border-radius-3xl: 2rem;
+
+// ===========================
+// TRANSITIONS
+// ===========================
+
+$transition-fast: 0.15s ease;
+$transition-base: 0.3s ease;
+$transition-slow: 0.5s ease;
+$transition-slower: 0.8s ease;

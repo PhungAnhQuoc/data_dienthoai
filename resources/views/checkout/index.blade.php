@@ -63,13 +63,15 @@
                         <h6 class="mb-3">Thanh toán</h6>
 
                         @foreach($paymentMethods as $method)
+                            @if($method->name !== 'vnpay')
                             <div class="form-check mb-3 p-3 border rounded" data-method-name="{{ $method->name }}">
-                                <input class="form-check-input" type="radio" name="payment_method_id" id="payment_{{ $method->id }}" value="{{ $method->id }}" data-name="{{ $method->name }}" {{ $loop->first ? 'checked' : '' }}>
+                                <input class="form-check-input" type="radio" name="payment_method_id" id="payment_{{ $method->id }}" value="{{ $method->id }}" data-name="{{ $method->name }}" {{ $loop->first && $method->name !== 'vnpay' ? 'checked' : ($loop->first ? '' : '') }}>
                                 <label class="form-check-label ms-3" for="payment_{{ $method->id }}">
                                     <strong>{{ $method->display_name }}</strong>
                                     <div class="small text-muted">{{ $method->description }}</div>
                                 </label>
                             </div>
+                            @endif
                         @endforeach
 
                         <div id="bank-transfer-info" class="mt-3" style="display:none;">
@@ -118,7 +120,7 @@
 
                 <input type="hidden" id="hidden-coupon" name="promotion_code" value="">
 
-                <button type="submit" class="btn btn-primary btn-lg w-100 mb-4">
+                <button type="submit" class="btn btn-primary btn-lg w-100 mb-4" id="checkout-btn">
                     <i class="bi bi-check-circle me-2"></i>Đặt hàng
                 </button>
             </form>
@@ -198,51 +200,96 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    function formatVND(n){
-        return n.toLocaleString('vi-VN') + '₫';
-    }
-
-    // payment sections
-    function updatePaymentSections(){
-        var sel = document.querySelector('input[name="payment_method_id"]:checked');
-        if(!sel) return;
-        var name = (sel.dataset.name || '').toLowerCase();
-        if(name.includes('bank') || name.includes('chuyển khoản')){
-            document.getElementById('bank-transfer-info').style.display = 'block';
-            document.getElementById('card-payment-form').style.display = 'none';
-        } else if(name.includes('card') || name.includes('thẻ')){
-            document.getElementById('bank-transfer-info').style.display = 'none';
-            document.getElementById('card-payment-form').style.display = 'block';
-        } else {
+    // Handle payment method change
+    document.querySelectorAll('input[name="payment_method_id"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const methodName = this.dataset.name;
+            
+            // Hide all payment forms
             document.getElementById('bank-transfer-info').style.display = 'none';
             document.getElementById('card-payment-form').style.display = 'none';
-        }
-    }
-
-    document.querySelectorAll('input[name="payment_method_id"]').forEach(function(r){
-        r.addEventListener('change', updatePaymentSections);
+            
+            // Show relevant form based on selected payment method
+            if (methodName === 'bank-transfer') {
+                document.getElementById('bank-transfer-info').style.display = 'block';
+            } else if (methodName === 'credit-card') {
+                document.getElementById('card-payment-form').style.display = 'block';
+            }
+        });
     });
-    updatePaymentSections();
 
-    // shipping fee update and total recalc
-    function recalcTotals(){
-        var subtotal = Number({{ $subtotal ?? 0 }});
-        var shippingFee = document.querySelector('input[name="shipping_method"]:checked')?.value === 'fast' ? 50000 : 30000;
-        var tax = Math.round(subtotal * 0.10);
+    // Trigger change event to show/hide based on initial selection
+    const initialChecked = document.querySelector('input[name="payment_method_id"]:checked');
+    if (initialChecked) {
+        initialChecked.dispatchEvent(new Event('change'));
+    }
+
+    // Handle form submission
+    document.getElementById('checkout-form').addEventListener('submit', function(e) {
+        e.preventDefault();
         
-        // Get current discount if applied
-        var discount = 0;
-        if (document.getElementById('hidden-coupon').value) {
-            var discountText = document.getElementById('summary-discount').textContent;
-            discount = parseInt(discountText.replace('₫', '').replace(/\./g, '')) || 0;
+        const selectedPaymentMethod = document.querySelector('input[name="payment_method_id"]:checked');
+        const paymentMethodId = selectedPaymentMethod?.value;
+        
+        // Find the payment method name
+        let paymentMethodName = '';
+        document.querySelectorAll('input[name="payment_method_id"]').forEach(input => {
+            if (input.value === paymentMethodId) {
+                paymentMethodName = input.dataset.name;
+            }
+        });
+        
+        // If VNPay is selected, submit the form normally first to create the order
+        // Then redirect to VNPay payment
+        if (paymentMethodName === 'vnpay') {
+            // Submit form to create order
+            const formData = new FormData(this);
+            
+            fetch('{{ route("checkout.store") }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.redirected) {
+                    // Extract order ID from redirect URL
+                    const url = new URL(response.url);
+                    const orderId = url.pathname.split('/').pop();
+                    
+                    // Redirect to VNPay payment
+                    window.location.href = '{{ route("payment.vnpay", ":orderId") }}'.replace(':orderId', orderId);
+                } else {
+                    return response.text().then(text => {
+                        document.open();
+                        document.write(text);
+                        document.close();
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi đặt hàng');
+            });
+        } else {
+            // For other payment methods, submit normally
+            this.submit();
         }
-        
+    });
+
+    function recalcTotals() {
+        const subtotal = Number({{ $subtotal ?? 0 }});
+        const shippingFee = document.querySelector('input[name="shipping_method"]:checked')?.value === 'fast' ? 50000 : 30000;
+        const tax = Math.round(subtotal * 0.10);
+        const discount = Number(document.getElementById('hidden-coupon').value || 0);
         var total = subtotal + shippingFee + tax - discount;
 
         document.getElementById('summary-subtotal').textContent = formatVND(subtotal);
         document.getElementById('summary-shipping').textContent = formatVND(shippingFee);
         document.getElementById('summary-tax').textContent = formatVND(tax);
         document.getElementById('summary-total').textContent = formatVND(total);
+    }
+
+    function formatVND(num) {
+        return num.toLocaleString('vi-VN') + '₫';
     }
 
     document.querySelectorAll('input[name="shipping_method"]').forEach(r => r.addEventListener('change', recalcTotals));
@@ -270,7 +317,7 @@ function applyCouponCheckout() {
         const msg = document.getElementById('coupon-msg-checkout');
         if (data.success) {
             // Save to hidden field
-            document.getElementById('hidden-coupon').value = data.code;
+            document.getElementById('hidden-coupon').value = data.discount;
             
             // Update discount display
             const discountSection = document.getElementById('discount-section');

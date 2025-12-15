@@ -4,6 +4,7 @@
     </IfModule>
 
     RewriteEngine On
+    RewriteBase /mobile-shop-master/
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .

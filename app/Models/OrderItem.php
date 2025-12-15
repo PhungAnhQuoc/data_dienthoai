@@ -9,6 +9,7 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'product_id',
+        'flash_sale_id',
         'quantity',
         'unit_price',
         'total_price'
@@ -23,5 +24,10 @@ class OrderItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function flashSale()
+    {
+        return $this->belongsTo(FlashSale::class);
     }
 }

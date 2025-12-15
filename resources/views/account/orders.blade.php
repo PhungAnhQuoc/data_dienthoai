@@ -84,7 +84,7 @@
                                                         </div>
                                                     </div>
 
-                                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#orderModal{{ $order->id }}">
+                                                    <button class="btn btn-sm btn-outline-primary view-order-btn" data-order-id="{{ $order->id }}">
                                                         <i class="bi bi-eye me-2"></i>Xem chi tiết
                                                     </button>
                                                     @if($order->status === 'pending')
@@ -92,113 +92,6 @@
                                                             <i class="bi bi-x-circle me-1"></i>Hủy đơn
                                                         </button>
                                                     @endif
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Modal Chi tiết đơn hàng -->
-                                        <div class="modal fade" id="orderModal{{ $order->id }}" tabindex="-1">
-                                            <div class="modal-dialog modal-lg">
-                                                <div class="modal-content">
-                                                    <div class="modal-header bg-light">
-                                                        <h5 class="modal-title">Chi tiết đơn hàng <strong>{{ $order->order_number }}</strong></h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <div class="row mb-3">
-                                                            <div class="col-md-6">
-                                                                <small class="text-muted">Trạng thái</small><br>
-                                                                <span class="badge bg-{{ $statusBadge[$order->status] ?? 'secondary' }}">{{ $statusLabel[$order->status] ?? 'N/A' }}</span>
-                                                            </div>
-                                                            <div class="col-md-6 text-end">
-                                                                <small class="text-muted">Ngày đặt</small><br>
-                                                                <strong>{{ $order->created_at->format('d/m/Y H:i') }}</strong>
-                                                            </div>
-                                                        </div>
-
-                                                        <hr>
-
-                                                        <h6 class="mb-3">Thông tin giao hàng</h6>
-                                                        <div class="row mb-3">
-                                                            <div class="col-md-6">
-                                                                <small class="text-muted">Người nhận</small><br>
-                                                                <strong>{{ $order->shipping_name }}</strong>
-                                                            </div>
-                                                            <div class="col-md-6">
-                                                                <small class="text-muted">Điện thoại</small><br>
-                                                                <strong>{{ $order->shipping_phone }}</strong>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row mb-3">
-                                                            <div class="col-12">
-                                                                <small class="text-muted">Địa chỉ</small><br>
-                                                                <strong>{{ $order->shipping_address }}</strong>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row mb-3">
-                                                            <div class="col-12">
-                                                                <small class="text-muted">Email</small><br>
-                                                                <strong>{{ $order->shipping_email }}</strong>
-                                                            </div>
-                                                        </div>
-
-                                                        <hr>
-
-                                                        <h6 class="mb-3">Chi tiết sản phẩm</h6>
-                                                        <div class="table-responsive">
-                                                            <table class="table table-sm">
-                                                                <thead class="table-light">
-                                                                    <tr>
-                                                                        <th>Sản phẩm</th>
-                                                                        <th class="text-end">Giá</th>
-                                                                        <th class="text-center">Số lượng</th>
-                                                                        <th class="text-end">Thành tiền</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    @foreach($order->items as $item)
-                                                                        @php
-                                                                            $price = $item->unit_price > 0 ? $item->unit_price : ($item->product->sale_price > 0 ? $item->product->sale_price : $item->product->price);
-                                                                            $totalPrice = $item->total_price > 0 ? $item->total_price : ($price * $item->quantity);
-                                                                        @endphp
-                                                                        <tr>
-                                                                            <td>{{ $item->product->name ?? $item->product_name }}</td>
-                                                                            <td class="text-end">{{ number_format($price, 0, ',', '.') }}₫</td>
-                                                                            <td class="text-center">{{ $item->quantity }}</td>
-                                                                            <td class="text-end">{{ number_format($totalPrice, 0, ',', '.') }}₫</td>
-                                                                        </tr>
-                                                                    @endforeach
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-
-                                                        <hr>
-
-                                                        <div class="row">
-                                                            <div class="col-md-6 ms-auto">
-                                                                <div class="d-flex justify-content-between mb-2">
-                                                                    <span>Tạm tính:</span>
-                                                                    <span>{{ number_format($order->total_amount - ($order->shipping_cost ?? 0) - ($order->tax_amount ?? 0), 0, ',', '.') }}₫</span>
-                                                                </div>
-                                                                <div class="d-flex justify-content-between mb-2">
-                                                                    <span>Vận chuyển:</span>
-                                                                    <span>{{ number_format($order->shipping_cost ?? 0, 0, ',', '.') }}₫</span>
-                                                                </div>
-                                                                <div class="d-flex justify-content-between mb-3">
-                                                                    <span>Thuế:</span>
-                                                                    <span>{{ number_format($order->tax_amount ?? 0, 0, ',', '.') }}₫</span>
-                                                                </div>
-                                                                <hr>
-                                                                <div class="d-flex justify-content-between fw-bold fs-5">
-                                                                    <span>Tổng cộng:</span>
-                                                                    <span class="text-primary">{{ number_format($order->total_amount, 0, ',', '.') }}₫</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -233,7 +126,7 @@
                                                                     <strong>{{ $order->items->sum('quantity') }} sản phẩm</strong>
                                                                 </div>
                                                             </div>
-                                                            <button class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#orderModal{{ $order->id }}">
+                                                            <button class="btn btn-sm btn-outline-primary mt-2 view-order-btn" data-order-id="{{ $order->id }}">
                                                                 <i class="bi bi-eye me-2"></i>Xem chi tiết
                                                             </button>
                                                         </div>
@@ -276,6 +169,130 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // View order button handler with event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.view-order-btn')) {
+            const btn = e.target.closest('.view-order-btn');
+            const orderId = btn.getAttribute('data-order-id');
+            console.log('Clicked order button, orderId:', orderId);
+            
+            // Show modal
+            const modalEl = document.getElementById('orderDetailModal');
+            const modal = modalEl ? new (window.bootstrap?.Modal || class {})( modalEl) : null;
+            
+            // Load order details via AJAX
+            fetch(`/api/don-hang/${orderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('modalOrderNumber').textContent = data.order_number;
+                    
+                    let itemsHtml = '';
+                    data.items.forEach(item => {
+                        itemsHtml += `
+                            <tr>
+                                <td>${item.name}</td>
+                                <td class="text-end">${(item.price).toLocaleString('vi-VN')}₫</td>
+                                <td class="text-center">${item.quantity}</td>
+                                <td class="text-end">${(item.total).toLocaleString('vi-VN')}₫</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    const html = `
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <small class="text-muted">Trạng thái</small><br>
+                                <span class="badge bg-secondary">${data.status}</span>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <small class="text-muted">Ngày đặt</small><br>
+                                <strong>${data.created_at}</strong>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h6 class="mb-3">Thông tin giao hàng</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <small class="text-muted">Người nhận</small><br>
+                                <strong>${data.shipping_name}</strong>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Điện thoại</small><br>
+                                <strong>${data.shipping_phone}</strong>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <small class="text-muted">Địa chỉ</small><br>
+                                <strong>${data.shipping_address}</strong>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <small class="text-muted">Email</small><br>
+                                <strong>${data.shipping_email}</strong>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h6 class="mb-3">Chi tiết sản phẩm</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Sản phẩm</th>
+                                        <th class="text-end">Giá</th>
+                                        <th class="text-center">Số lượng</th>
+                                        <th class="text-end">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${itemsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-6 ms-auto">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Tạm tính:</span>
+                                    <span>${(data.subtotal).toLocaleString('vi-VN')}₫</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Vận chuyển:</span>
+                                    <span>${(data.shipping_cost).toLocaleString('vi-VN')}₫</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Thuế:</span>
+                                    <span>${(data.tax).toLocaleString('vi-VN')}₫</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between fw-bold fs-5">
+                                    <span>Tổng cộng:</span>
+                                    <span class="text-primary">${(data.total).toLocaleString('vi-VN')}₫</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('orderDetailContent').innerHTML = html;
+                    if (modal && modal.show) modal.show();
+                    else modalEl.classList.add('show'), modalEl.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('orderDetailContent').innerHTML = '<div class="alert alert-danger">Có lỗi khi tải dữ liệu: ' + error.message + '</div>';
+                    if (modal && modal.show) modal.show();
+                    else modalEl.classList.add('show'), modalEl.style.display = 'block';
+                });
+        }
+    });
+
     // Cancel order button handler
     document.querySelectorAll('.cancel-order-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -309,4 +326,29 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
+
+<!-- Order Detail Modal -->
+<div class="modal fade" id="orderDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">Chi tiết đơn hàng <strong id="modalOrderNumber"></strong></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="orderDetailContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection

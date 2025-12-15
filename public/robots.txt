@@ -1,2 +1,23 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /user/
+Disallow: /login
+Disallow: /register
+Disallow: /password/
+Disallow: /*.json$
+Disallow: /search
+
+# Sitemap
+Sitemap: https://yourdomain.com/sitemap.xml
+
+# Delay for aggressive crawlers (in seconds)
+Crawl-delay: 1
+
+# Block specific bots if needed
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /

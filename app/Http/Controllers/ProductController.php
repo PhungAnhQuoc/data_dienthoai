@@ -13,31 +13,53 @@ class ProductController extends Controller
     {
         $query = Product::where('is_active', true);
 
+        // Search by name, description, SKU
         if ($search = $request->input('search')) {
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
             });
         }
 
+        // Filter by category
         if ($category = $request->input('category')) {
             $query->whereHas('category', function($q) use ($category) {
                 $q->where('slug', $category);
             });
         }
 
+        // Filter by brand
         if ($brand = $request->input('brand')) {
             $query->whereHas('brand', function($q) use ($brand) {
                 $q->where('slug', $brand);
             });
         }
 
+        // Filter by price range
         if ($priceFrom = $request->input('price_from')) {
-            $query->where('price', '>=', $priceFrom);
+            $query->where(function($q) use ($priceFrom) {
+                $q->where('sale_price', '>=', $priceFrom)
+                  ->orWhere('price', '>=', $priceFrom);
+            });
         }
         
         if ($priceTo = $request->input('price_to')) {
-            $query->where('price', '<=', $priceTo);
+            $query->where(function($q) use ($priceTo) {
+                $q->where(function($subQ) use ($priceTo) {
+                    $subQ->where('sale_price', '<=', $priceTo)
+                         ->orWhereNull('sale_price');
+                })->where('price', '<=', $priceTo);
+            });
+        }
+
+        // Filter by rating
+        if ($minRating = $request->input('min_rating')) {
+            $query->whereHas('reviews', function($q) use ($minRating) {
+                $q->where('is_approved', true)
+                  ->selectRaw('AVG(rating) as avg_rating')
+                  ->havingRaw('AVG(rating) >= ?', [$minRating]);
+            }, '>=', 1);
         }
 
         $this->applyStatusFilter($query, $request->input('status'));
@@ -72,19 +94,31 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = $this->applyFilters($request);
-        $products = $query->with(['category', 'brand'])->paginate(12);
-        $categories = Category::where('is_active', true)->get();
-        $brands = Brand::where('is_active', true)->get();
+        $products = $query->with(['category', 'brand', 'images'])
+            ->paginate(12);
+        $categories = Category::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        $brands = Brand::where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
-        return view('products.index-new', compact('products', 'categories', 'brands'));
+        return view('products.index-new-responsive', compact('products', 'categories', 'brands'));
     }
 
     public function show($slug)
     {
-        $product = Product::where('slug', $slug)->where('is_active', true)->firstOrFail();
+        $product = Product::where('slug', $slug)
+            ->where('is_active', true)
+            ->with(['category', 'brand', 'images', 'reviews' => function($q) {
+                $q->where('is_approved', true)->orderBy('created_at', 'desc');
+            }])
+            ->firstOrFail();
+
         $relatedProducts = Product::where('category_id', $product->category_id)
             ->where('is_active', true)
             ->where('id', '!=', $product->id)
+            ->with(['images'])
             ->limit(4)
             ->get();
 
